@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit colors="true" bootstrap="tests/bootstrap.php" verbose="true" forceCoversAnnotation="true">
+    bootstrap="bootstrap.php"
+    <testsuites>
+        <testsuite name="Default">
+            <directory prefix="test" suffix=".php">apiclient/tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

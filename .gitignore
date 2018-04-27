@@ -1,0 +1,4 @@
+/vendor/
+/logs/*
+/src../
+client-credentials-salsify-app.json
