@@ -5,8 +5,11 @@ namespace Apiclient;
 
 class SalsifyHeaders
 {
+    private $httpResCode = 0;
+    private $requestBody;
+    private $salsifyCert;
     private $logger;
-    private $prefix = "SalsifyHeaders: ";
+    private $prefix = "Class: SalsifyHeaders ";
     private $rawHeaders;
     private $salsifySentHeaders;
     private $salsifySpecedHeaders = array(
@@ -17,10 +20,9 @@ class SalsifyHeaders
         "HTTP_X_SALSIFY_ORGANIZATION_ID" => ""
     );
 
-
-
-    public function __construct($rawHeaders, $logger)
+    public function __construct($rawHeaders, $logger, $requestBody)
     {
+        $this->requestBody = $requestBody;
         $this->rawHeaders = $rawHeaders;
         $this->logger = $logger;
     }
@@ -35,13 +37,69 @@ class SalsifyHeaders
             $this->logger->error($this->prefix . "Header Names mismatch ");
             return false;
         }
+
+        if (!$this->validCertUrl()) {
+            $this->logger->error($this->prefix . "Invalid Cert URL ");
+            return false;
+        }
+
+        if (!$this->fetchCert()) {
+            $this->logger->error($this->prefix . "Curl response HTTP: $this->httpResCode");
+            return false;
+        }
+        $data = $this->salsifySentHeaders["HTTP_X_SALSIFY_TIMESTAMP"] . "." .
+            $this->salsifySentHeaders["HTTP_X_SALSIFY_REQUEST_ID"] . "." .
+            $this->salsifySentHeaders["HTTP_X_SALSIFY_ORGANIZATION_ID"] . "." .
+            'client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData' . "." .
+            $this->requestBody;
+
+        $publicKey = openssl_pkey_get_public($this->salsifyCert);
+        $signature = base64_decode($this->salsifySentHeaders["HTTP_X_SALSIFY_SIGNATURE_V1"], $strict = true);
+        $test = openssl_verify($data, $signature, $publicKey);
+
+        var_dump($test);
+        var_dump($data);
         return true;
     }
 
     /**
      * @return boolean
      */
-    public function matchNames()
+    private function fetchCert()
+    {
+        $ch = curl_init($this->salsifySentHeaders["HTTP_X_SALSIFY_CERT_URL"]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        if ( !$this->salsifyCert = curl_exec($ch)) {
+            curl_close($ch);
+            return false;
+        }
+
+        $this->httpResCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($this->httpResCode !== 200) {
+            curl_close($ch);
+            return false;
+        }
+
+        curl_close($ch);
+        return true;
+    }
+
+    /**
+     * @return boolean
+     */
+    private function validCertUrl()
+    {
+        $certUrl = parse_url($this->salsifySentHeaders["HTTP_X_SALSIFY_CERT_URL"]);
+        if ($certUrl['scheme'] !== 'https' || $certUrl['host'] !== 'webhooks-auth.salsify.com') {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @return boolean
+     */
+    private function matchNames()
     {
         $pattern = '/^HTTP_X_SALSIFY.*/';
         foreach ($this->rawHeaders as $name => $values) {
@@ -49,6 +107,7 @@ class SalsifyHeaders
                 $this->salsifySentHeaders[$name] = $values[0];
             }
         }
+        //todo check sent headers array not empty
         $difference = array_diff_key($this->salsifySpecedHeaders, $this->salsifySentHeaders);
         if (!empty($difference)) {
             return false;
