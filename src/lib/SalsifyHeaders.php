@@ -6,9 +6,10 @@ use Monolog\Logger;
 
 class SalsifyHeaders
 {
-    private $httpResCode = 0;
+    private $cacheTimout = 3600; //in seconds
+    private $certFile = "../cache/salsifyPubCert.pem";
     private $requestBody;
-    private $salsifyCert;
+    private $publicKey;
     private $logger;
     private $rawHeaders;
     private $salsifySentHeaders;
@@ -38,7 +39,7 @@ class SalsifyHeaders
      */
     public function areValid()
     {
-        $prefix = "Class: SalsifyHeaders ";
+        $prefix = "Class: SalsifyHeaders Method: areValid() ";
 
         if (!$this->matchNames()) {
             $this->logger->error($prefix . "Header Names mismatch ");
@@ -50,8 +51,8 @@ class SalsifyHeaders
             return false;
         }
 
-        if (!$this->fetchCert()) {
-            $this->logger->error($prefix . "Curl response HTTP: $this->httpResCode");
+        if (!$this->setPublicKey()) {
+            $this->logger->error($prefix . "Cant setPublic Key");
             return false;
         }
         if (!$this->validSigature()) {
@@ -64,22 +65,46 @@ class SalsifyHeaders
     /**
      * @return boolean
      */
-    private function fetchCert()
+    private function hasCertInCache()
     {
+        $prefix = "Method hasCertInCache() ";
+        if (!file_exists($this->certFile)) {
+            $this->logger->error($prefix . "cant open cache file " . $this->certFile);
+            return false;
+        }
+        $fileTime = filemtime($this->certFile);
+        if ((time() - $fileTime) > $this->cacheTimout) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @return boolean
+     */
+    private function fetchCertFromUrl()
+    {
+        $prefix = "Method fetchCertFromUrl() ";
         $ch = curl_init($this->salsifySentHeaders["HTTP_X_SALSIFY_CERT_URL"]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        if ( !$this->salsifyCert = curl_exec($ch)) {
+        $cert = curl_exec($ch);
+        if (!$cert) {
             curl_close($ch);
+            $this->logger->error($prefix . "Curl Request failed");
             return false;
         }
 
-        $this->httpResCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($this->httpResCode !== 200) {
+        $httpResCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($httpResCode !== 200) {
             curl_close($ch);
+            $this->logger->error($prefix . "Http code:" . $httpResCode);
             return false;
         }
-
         curl_close($ch);
+        $this->logger->debug($prefix . "Fetched cert from url after cache timeout");
+        $file = fopen($this->certFile, "w") or die("Unable to open file!");
+        fwrite($file, $cert);
+        fclose($file);
         return true;
     }
 
@@ -105,6 +130,25 @@ class SalsifyHeaders
     /**
      * @return boolean
      */
+    private function setPublicKey()
+    {
+        $prefix = "Method: setPublicKey() ";
+        if (!$this->hasCertInCache()) {
+            if (!$this->fetchCertFromUrl()) {
+                return false;
+            }
+        }
+        $this->publicKey = openssl_pkey_get_public(file_get_contents($this->certFile));
+        if (!$this->publicKey) {
+            $this->logger->error($prefix . "Failed to create key from cert");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @return boolean
+     */
     private function validCertUrl()
     {
         $certUrl = parse_url($this->salsifySentHeaders["HTTP_X_SALSIFY_CERT_URL"]);
@@ -122,9 +166,8 @@ class SalsifyHeaders
             'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData' . "." .
             $this->requestBody;
 
-        $publicKey = openssl_pkey_get_public($this->salsifyCert);
         $signature = base64_decode($this->salsifySentHeaders["HTTP_X_SALSIFY_SIGNATURE_V1"], $strict = true);
-        $isValid = openssl_verify($data, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+        $isValid = openssl_verify($data, $signature, $this->publicKey, OPENSSL_ALGO_SHA256);
         if ($isValid === 0) {
             return false;
         }

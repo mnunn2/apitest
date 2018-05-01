@@ -5,7 +5,6 @@ use \Psr\Http\Message\ResponseInterface as Resp;
 use \Apiclient\SalsifyHeaders;
 
 $app->post('/salsifywebhook', function (Req $request, Resp $response, $args) {
-
     //todo: add log prefix
     $rawHeaders = $request->getHeaders();
     $requestBody = $request->getBody()->getContents();
@@ -13,12 +12,25 @@ $app->post('/salsifywebhook', function (Req $request, Resp $response, $args) {
 
     if (!$salsifyHeaders->areValid()) {
         $this->logger->error("salsify-webhook '/slsifywebhook' validation error");
-        $response->getBody()->write("Invalid Headers\n");
+        $response->getBody()->write("{ 'response':'validation failed'}");
     } else {
         $this->logger->info("salsify-webhook '/slsifywebhook' route ok");
-        $response->getBody()->write("{ 'success':'ok' }");
+        $outFile = fopen("../cache/body.json", "w") or die("Unable to open file!");
+        fwrite($outFile, $requestBody );
+        fclose($outFile);
+        $response->getBody()->write("{ 'response':'ok' }");
     }
     return $response;
+});
+
+$app->get('/cachedJson', function (Req $request, Resp $response, $args) {
+
+    $jsonString = file_get_contents("../cache/body.json");
+    //$newString = json_encode($jsonString, JSON_PRETTY_PRINT);
+    $newResponse = $response->withHeader('Content-type', 'application/json');
+    $newResponse->getBody()->write($jsonString);
+
+    return $newResponse;
 });
 
 $app->post('/dumpData', function (Req $request, Resp $response, $args) {
