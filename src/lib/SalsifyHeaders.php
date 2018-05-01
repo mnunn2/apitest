@@ -2,6 +2,7 @@
 
 namespace Apiclient;
 
+use Monolog\Logger;
 
 class SalsifyHeaders
 {
@@ -9,7 +10,6 @@ class SalsifyHeaders
     private $requestBody;
     private $salsifyCert;
     private $logger;
-    private $prefix = "Class: SalsifyHeaders ";
     private $rawHeaders;
     private $salsifySentHeaders;
     private $salsifySpecedHeaders = array(
@@ -20,7 +20,13 @@ class SalsifyHeaders
         "HTTP_X_SALSIFY_ORGANIZATION_ID" => ""
     );
 
-    public function __construct($rawHeaders, $logger, $requestBody)
+    /**
+     * SalsifyHeaders constructor.
+     * @param $rawHeaders
+     * @param Logger $logger
+     * @param $requestBody
+     */
+    public function __construct($rawHeaders, Logger $logger, $requestBody)
     {
         $this->requestBody = $requestBody;
         $this->rawHeaders = $rawHeaders;
@@ -32,33 +38,26 @@ class SalsifyHeaders
      */
     public function areValid()
     {
+        $prefix = "Class: SalsifyHeaders ";
 
         if (!$this->matchNames()) {
-            $this->logger->error($this->prefix . "Header Names mismatch ");
+            $this->logger->error($prefix . "Header Names mismatch ");
             return false;
         }
 
         if (!$this->validCertUrl()) {
-            $this->logger->error($this->prefix . "Invalid Cert URL ");
+            $this->logger->error($prefix . "Invalid Cert URL ");
             return false;
         }
 
         if (!$this->fetchCert()) {
-            $this->logger->error($this->prefix . "Curl response HTTP: $this->httpResCode");
+            $this->logger->error($prefix . "Curl response HTTP: $this->httpResCode");
             return false;
         }
-        $data = $this->salsifySentHeaders["HTTP_X_SALSIFY_TIMESTAMP"] . "." .
-            $this->salsifySentHeaders["HTTP_X_SALSIFY_REQUEST_ID"] . "." .
-            $this->salsifySentHeaders["HTTP_X_SALSIFY_ORGANIZATION_ID"] . "." .
-            'client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData' . "." .
-            $this->requestBody;
-
-        $publicKey = openssl_pkey_get_public($this->salsifyCert);
-        $signature = base64_decode($this->salsifySentHeaders["HTTP_X_SALSIFY_SIGNATURE_V1"], $strict = true);
-        $test = openssl_verify($data, $signature, $publicKey);
-
-        var_dump($test);
-        var_dump($data);
+        if (!$this->validSigature()) {
+            $this->logger->error($prefix . "Signature invalid");
+            return false;
+        }
         return true;
     }
 
@@ -87,18 +86,6 @@ class SalsifyHeaders
     /**
      * @return boolean
      */
-    private function validCertUrl()
-    {
-        $certUrl = parse_url($this->salsifySentHeaders["HTTP_X_SALSIFY_CERT_URL"]);
-        if ($certUrl['scheme'] !== 'https' || $certUrl['host'] !== 'webhooks-auth.salsify.com') {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * @return boolean
-     */
     private function matchNames()
     {
         $pattern = '/^HTTP_X_SALSIFY.*/';
@@ -113,5 +100,35 @@ class SalsifyHeaders
             return false;
         }
         return true;
+    }
+
+    /**
+     * @return boolean
+     */
+    private function validCertUrl()
+    {
+        $certUrl = parse_url($this->salsifySentHeaders["HTTP_X_SALSIFY_CERT_URL"]);
+        if ($certUrl['scheme'] !== 'https' || $certUrl['host'] !== 'webhooks-auth.salsify.com') {
+            return false;
+        }
+        return true;
+    }
+
+    private function validSigature()
+    {
+        $data = $this->salsifySentHeaders["HTTP_X_SALSIFY_TIMESTAMP"] . "." .
+            $this->salsifySentHeaders["HTTP_X_SALSIFY_REQUEST_ID"] . "." .
+            $this->salsifySentHeaders["HTTP_X_SALSIFY_ORGANIZATION_ID"] . "." .
+            'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData' . "." .
+            $this->requestBody;
+
+        $publicKey = openssl_pkey_get_public($this->salsifyCert);
+        $signature = base64_decode($this->salsifySentHeaders["HTTP_X_SALSIFY_SIGNATURE_V1"], $strict = true);
+        $isValid = openssl_verify($data, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+        if ($isValid === 0) {
+            return false;
+        }
+        return true;
+
     }
 }
