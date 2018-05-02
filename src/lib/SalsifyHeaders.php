@@ -6,6 +6,7 @@ use Monolog\Logger;
 
 class SalsifyHeaders
 {
+    private $webhookURL;
     private $cacheTimout = 3600; //in seconds
     private $certFile = "../cache/salsifyPubCert.pem";
     private $requestBody;
@@ -23,15 +24,18 @@ class SalsifyHeaders
 
     /**
      * SalsifyHeaders constructor.
-     * @param $rawHeaders
+     * @param $request
      * @param Logger $logger
-     * @param $requestBody
+     *
      */
-    public function __construct($rawHeaders, Logger $logger, $requestBody)
+    public function __construct($request, Logger $logger)
     {
-        $this->requestBody = $requestBody;
-        $this->rawHeaders = $rawHeaders;
+        $this->requestBody = $request->getBody()->getContents();
+        $this->rawHeaders = $request->getHeaders();
         $this->logger = $logger;
+        $this->webhookURL = (string)$request->getUri();
+        // used for testing with test test data
+        //$this->webhookURL = 'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData';
     }
 
     /**
@@ -163,7 +167,7 @@ class SalsifyHeaders
         $data = $this->salsifySentHeaders["HTTP_X_SALSIFY_TIMESTAMP"] . "." .
             $this->salsifySentHeaders["HTTP_X_SALSIFY_REQUEST_ID"] . "." .
             $this->salsifySentHeaders["HTTP_X_SALSIFY_ORGANIZATION_ID"] . "." .
-            'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData' . "." .
+            $this->webhookURL . "." .
             $this->requestBody;
 
         $signature = base64_decode($this->salsifySentHeaders["HTTP_X_SALSIFY_SIGNATURE_V1"], $strict = true);
