@@ -28,14 +28,13 @@ class SalsifyHeaders
      * @param Logger $logger
      *
      */
-    public function __construct($request, Logger $logger)
+    public function __construct($rawHeaders, $requestBody, $requestUri, Logger $logger)
     {
-        $this->requestBody = $request->getBody()->getContents();
-        $this->rawHeaders = $request->getHeaders();
+        $this->rawHeaders = $rawHeaders;
+        $this->requestBody = $requestBody;
         $this->logger = $logger;
-        $this->webhookURL = (string)$request->getUri();
-        // used for testing with test test data
-        //$this->webhookURL = 'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData';
+        $this->webhookURL = $requestUri;
+        var_dump($this->webhookURL);
     }
 
     /**

@@ -4,9 +4,17 @@ use \Psr\Http\Message\ServerRequestInterface as Req;
 use \Psr\Http\Message\ResponseInterface as Resp;
 use \Apiclient\SalsifyHeaders;
 
-$app->post('/salsifywebhook', function (Req $request, Resp $response, $args) {
+$app->post('/salsifywebhook[/{test}]', function (Req $request, Resp $response, $args = []) {
     //todo: add log prefix
-    $salsifyHeaders = new SalsifyHeaders($request, $this->logger);
+    if (array_key_exists('test', $args)) {
+        // for use with the test data set
+        $requestUri = 'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData';
+    } else {
+        $requestUri = (string)$request->getUri();
+    }
+    $requestBody = $request->getBody()->getContents();
+    $rawHeaders = $request->getHeaders();
+    $salsifyHeaders = new SalsifyHeaders($rawHeaders, $requestBody, $requestUri, $this->logger);
 
     if (!$salsifyHeaders->areValid()) {
         $this->logger->error("salsify-webhook '/slsifywebhook' validation error");
@@ -14,7 +22,7 @@ $app->post('/salsifywebhook', function (Req $request, Resp $response, $args) {
     } else {
         $this->logger->info("salsify-webhook '/slsifywebhook' route ok");
         $outFile = fopen("../cache/body.json", "w") or die("Unable to open file!");
-        fwrite($outFile, $request->getBody()->getContents());
+        fwrite($outFile, $requestBody);
         fclose($outFile);
         $response->getBody()->write("{ 'response':'ok' }");
     }
