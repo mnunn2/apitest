@@ -1,5 +1,6 @@
 /vendor/
 /logs/*
+!/logs/.gitkeep
 /src../
 client-credentials-salsify-app.json
 public/data.json
