@@ -24,7 +24,9 @@ class SalsifyHeaders
 
     /**
      * SalsifyHeaders constructor.
-     * @param $request
+     * @param $rawHeaders
+     * @param $requestBody
+     * @param $requestUri
      * @param Logger $logger
      *
      */
@@ -34,7 +36,6 @@ class SalsifyHeaders
         $this->requestBody = $requestBody;
         $this->logger = $logger;
         $this->webhookURL = $requestUri;
-        var_dump($this->webhookURL);
     }
 
     /**

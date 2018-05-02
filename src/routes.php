@@ -20,7 +20,7 @@ $app->post('/salsifywebhook[/{test}]', function (Req $request, Resp $response, $
         $this->logger->error("salsify-webhook '/slsifywebhook' validation error");
         $response->getBody()->write("{ 'response':'validation failed'}");
     } else {
-        $this->logger->info("salsify-webhook '/slsifywebhook' route ok");
+        $this->logger->info("salsify-webhook '/slsifywebhook' ok, id = " . $rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0]);
         $outFile = fopen("../cache/body.json", "w") or die("Unable to open file!");
         fwrite($outFile, $requestBody);
         fclose($outFile);
