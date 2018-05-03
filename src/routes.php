@@ -2,21 +2,21 @@
 
 use \Psr\Http\Message\ServerRequestInterface as Req;
 use \Psr\Http\Message\ResponseInterface as Resp;
-use \Apiclient\SalsifyHeaders;
 
 $app->post('/salsifywebhook[/{test}]', function (Req $request, Resp $response, $args = []) {
     //todo: add log prefix
     if (array_key_exists('test', $args)) {
         // for use with the test data set
-        $requestUri = 'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData';
+        $this->salsifyHeaders->setWebhookURL('http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData');
     } else {
-        $requestUri = (string)$request->getUri();
+        $this->salsifyHeaders->setWebhookURL((string)$request->getUri());
     }
     $requestBody = $request->getBody()->getContents();
+    $this->salsifyHeaders->setRequestBody($requestBody);
     $rawHeaders = $request->getHeaders();
-    $salsifyHeaders = new SalsifyHeaders($rawHeaders, $requestBody, $requestUri, $this->logger);
+    $this->salsifyHeaders->setRawHeaders($rawHeaders);
 
-    if (!$salsifyHeaders->areValid()) {
+    if (!$this->salsifyHeaders->areValid()) {
         $this->logger->error("salsify-webhook '/slsifywebhook' validation error");
         $response->getBody()->write("{ 'response':'validation failed'}");
     } else {
@@ -29,7 +29,7 @@ $app->post('/salsifywebhook[/{test}]', function (Req $request, Resp $response, $
     return $response;
 });
 
-$app->get('/cachedJson', function (Req $request, Resp $response, $args) {
+$app->get('/cachedJson', function (Req $request, Resp $response) {
 
     $jsonString = file_get_contents("../cache/body.json");
     $newResponse = $response->withHeader('Content-type', 'application/json');
@@ -38,7 +38,7 @@ $app->get('/cachedJson', function (Req $request, Resp $response, $args) {
     return $newResponse;
 });
 
-$app->post('/dumpData', function (Req $request, Resp $response, $args) {
+$app->post('/dumpData', function (Req $request, Resp $response) {
 
     $headers = $request->getHeaders();
     $file = fopen("headers.txt", "w") or die("Unable to open file!");
@@ -54,4 +54,10 @@ $app->post('/dumpData', function (Req $request, Resp $response, $args) {
     return $response;
 });
 
+$app->get('/info', function (Req $request, Resp $response) {
+
+    $response->getBody()->write(phpinfo());
+
+    return $response;
+});
 

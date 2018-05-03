@@ -4,6 +4,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \Monolog\Processor\UidProcessor;
+use \Apiclient\SalsifyHeaders;
 
 $container = $app->getContainer();
 
@@ -22,4 +23,19 @@ $container['logger'] = function ($c) {
     $logger->pushHandler($streamHandler);
 
     return $logger;
+};
+
+$container['db'] = function ($c) {
+    $settings = $c->get('settings')['db'];
+    $pdo = new PDO('mysql:host=' . $settings['host'] . ';dbname=' . $settings['dbname'],
+        $settings['user'], $settings['pass']);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    return $pdo;
+};
+
+$container['salsifyHeaders'] = function($c) {
+    $logger = $c->get('logger');
+    $db = $c->get('db');
+    return new SalsifyHeaders($logger, $db);
 };

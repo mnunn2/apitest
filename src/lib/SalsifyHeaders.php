@@ -12,6 +12,7 @@ class SalsifyHeaders
     private $requestBody;
     private $publicKey;
     private $logger;
+    private $db;
     private $rawHeaders;
     private $salsifySentHeaders;
     private $salsifySpecedHeaders = array(
@@ -24,18 +25,14 @@ class SalsifyHeaders
 
     /**
      * SalsifyHeaders constructor.
-     * @param $rawHeaders
-     * @param $requestBody
-     * @param $requestUri
      * @param Logger $logger
+     * @param \PDO $db
      *
      */
-    public function __construct($rawHeaders, $requestBody, $requestUri, Logger $logger)
+    public function __construct(Logger $logger, \PDO $db)
     {
-        $this->rawHeaders = $rawHeaders;
-        $this->requestBody = $requestBody;
         $this->logger = $logger;
-        $this->webhookURL = $requestUri;
+        $this->db = $db;
     }
 
     /**
@@ -43,6 +40,16 @@ class SalsifyHeaders
      */
     public function areValid()
     {
+        $stmt = $this->db->query("SELECT date FROM fred where name = 'foo'");
+        while ($row = $stmt->fetch())
+        {
+            echo $row['date'];
+        }
+        $data = json_decode($this->requestBody);
+        var_dump($data->{"organization"});
+        var_dump($data->{"alert"});
+        var_dump($data->{"products"}[0]->{"salsify:id"});
+
         $prefix = "Class: SalsifyHeaders Method: areValid() ";
 
         if (!$this->matchNames()) {
@@ -177,5 +184,29 @@ class SalsifyHeaders
         }
         return true;
 
+    }
+
+    /**
+     * @param $rawHeaders
+     */
+    public function setRawHeaders($rawHeaders)
+    {
+        $this->rawHeaders = $rawHeaders;
+    }
+
+    /**
+     * @param $requestBody
+     */
+    public function setRequestBody($requestBody)
+    {
+        $this->requestBody = $requestBody;
+    }
+
+    /**
+     * @param $requestUri
+     */
+    public function setWebhookURL($requestUri)
+    {
+        $this->webhookURL = $requestUri;
     }
 }
