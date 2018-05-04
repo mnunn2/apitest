@@ -45,8 +45,9 @@ $container['salsifyHeaders'] = function($c) {
 // by class name from the route
 $container['Apiclient\SalsifyData'] = function($c) {
     $logger = $c->get('logger');
-    $db = $c->get('db');
-    return new SalsifyData($logger, $db);
+    //$db = $c->get('db');
+    //return new SalsifyData($logger, $db);
+    return new SalsifyData($logger);
 };
 
 $container['Apiclient\SalsifyWebhook'] = function($c) {

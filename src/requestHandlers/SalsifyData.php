@@ -9,27 +9,28 @@ use Monolog\Logger;
 class SalsifyData
 {
     private $logger;
-    private $db;
+    //private $db;
     /**
      * SalsifyHeaders constructor.
      * @param Logger $logger
-     * @param \PDO $db
+    // * @param \PDO $db
      *
      */
-    public function __construct(Logger $logger, \PDO $db)
+    //public function __construct(Logger $logger, \PDO $db)
+    public function __construct(Logger $logger)
     {
         $this->logger = $logger;
-        $this->db = $db;
+        //$this->db = $db;
     }
 
     public function __invoke(Req $request, Resp $response, $args)
     {
-        var_dump($request);
-        $jsonString = file_get_contents(__DIR__ . "/../../cache/body.json");
-        $newResponse = $response->withHeader('Content-type', 'application/json');
-        $newResponse->getBody()->write($jsonString);
+//        $jsonString = file_get_contents(__DIR__ . "/../../cache/body.json");
+//        $newResponse = $response->withHeader('Content-type', 'application/json');
+//        $newResponse->getBody()->write($jsonString);
+        $response->getBody()->write("wibble");
 
-        return $newResponse;
+        return $response;
     }
 }
 
