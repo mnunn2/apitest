@@ -15,7 +15,7 @@
     },
 
 	"autoload": {
-		"psr-4": {"Apiclient\\": "src/lib/"}
+		"psr-4": {"Apiclient\\": ["src/requestHandlers/", "src/lib/"]}
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^5"

@@ -5,6 +5,8 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \Monolog\Processor\UidProcessor;
 use \Apiclient\SalsifyHeaders;
+use \Apiclient\SalsifyData;
+use \Apiclient\SalsifyWebhook;
 
 $container = $app->getContainer();
 
@@ -38,4 +40,17 @@ $container['salsifyHeaders'] = function($c) {
     $logger = $c->get('logger');
     $db = $c->get('db');
     return new SalsifyHeaders($logger, $db);
+};
+// NB the full class name is required because it is being called directly
+// by class name from the route
+$container['Apiclient\SalsifyData'] = function($c) {
+    $logger = $c->get('logger');
+    $db = $c->get('db');
+    return new SalsifyData($logger, $db);
+};
+
+$container['Apiclient\SalsifyWebhook'] = function($c) {
+    $logger = $c->get('logger');
+    $headers = $c->get('salsifyHeaders');
+    return new SalsifyWebhook($logger, $headers);
 };
