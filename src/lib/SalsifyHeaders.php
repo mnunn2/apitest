@@ -40,16 +40,6 @@ class SalsifyHeaders
      */
     public function areValid()
     {
-        $stmt = $this->db->query("SELECT date FROM fred where name = 'foo'");
-        while ($row = $stmt->fetch())
-        {
-            echo $row['date'];
-        }
-        $data = json_decode($this->requestBody);
-        var_dump($data->{"organization"});
-        var_dump($data->{"alert"});
-        var_dump($data->{"products"}[0]->{"salsify:id"});
-
         $prefix = "Class: SalsifyHeaders Method: areValid() ";
 
         if (!$this->matchNames()) {

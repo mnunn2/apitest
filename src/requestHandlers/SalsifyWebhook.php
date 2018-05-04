@@ -5,12 +5,12 @@ namespace Apiclient;
 use \Psr\Http\Message\ServerRequestInterface as Req;
 use \Psr\Http\Message\ResponseInterface as Resp;
 use Monolog\Logger;
-use Apiclient\SalsifyHeaders;
 
 class SalsifyWebhook
 {
     private $logger;
     private $salsifyHeaders;
+
     /**
      * SalsifyHeaders constructor.
      * @param Logger $logger
