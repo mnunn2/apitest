@@ -7,6 +7,7 @@ use \Monolog\Processor\UidProcessor;
 use \Apiclient\SalsifyHeaders;
 use \Apiclient\SalsifyData;
 use \Apiclient\SalsifyWebhook;
+use \Apiclient\SalsifyProductData;
 
 $container = $app->getContainer();
 
@@ -38,20 +39,26 @@ $container['db'] = function ($c) {
 
 $container['salsifyHeaders'] = function($c) {
     $logger = $c->get('logger');
-    $db = $c->get('db');
-    return new SalsifyHeaders($logger, $db);
+    return new SalsifyHeaders($logger);
 };
+
+$container['salsifyProductData'] = function($c) {
+    $logger = $c->get('logger');
+    $db = $c->get('db');
+    return new SalsifyProductData($logger, $db);
+};
+
 // NB the full class name is required because it is being called directly
 // by class name from the route
 $container['Apiclient\SalsifyData'] = function($c) {
     $logger = $c->get('logger');
-    //$db = $c->get('db');
-    //return new SalsifyData($logger, $db);
-    return new SalsifyData($logger);
+    $data = $c->get('salsifyProductData');
+    return new SalsifyData($logger, $data);
 };
 
 $container['Apiclient\SalsifyWebhook'] = function($c) {
     $logger = $c->get('logger');
     $headers = $c->get('salsifyHeaders');
-    return new SalsifyWebhook($logger, $headers);
+    $productData = $c->get('salsifyProductData');
+    return new SalsifyWebhook($logger, $headers, $productData);
 };

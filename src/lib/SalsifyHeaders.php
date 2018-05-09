@@ -12,7 +12,6 @@ class SalsifyHeaders
     private $requestBody;
     private $publicKey;
     private $logger;
-    private $db;
     private $rawHeaders;
     private $salsifySentHeaders;
     private $salsifySpecedHeaders = array(
@@ -29,10 +28,9 @@ class SalsifyHeaders
      * @param \PDO $db
      *
      */
-    public function __construct(Logger $logger, \PDO $db)
+    public function __construct(Logger $logger)
     {
         $this->logger = $logger;
-        $this->db = $db;
     }
 
     /**

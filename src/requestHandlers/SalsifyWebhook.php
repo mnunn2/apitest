@@ -10,18 +10,21 @@ class SalsifyWebhook
 {
     private $logger;
     private $salsifyHeaders;
+    private $salsifyProductData;
 
     /**
      * SalsifyHeaders constructor.
      * @param Logger $logger
      * @param SalsifyHeaders $salsifyHeaders
+     * @param SalsifyProductData $salsifyProductData
      *
      *
      */
-    public function __construct(Logger $logger, SalsifyHeaders $salsifyHeaders)
+    public function __construct(Logger $logger, SalsifyHeaders $salsifyHeaders, SalsifyProductData $salsifyProductData)
     {
         $this->logger = $logger;
         $this->salsifyHeaders = $salsifyHeaders;
+        $this->salsifyProductData = $salsifyProductData;
     }
 
     public function __invoke(Req $request, Resp $response, $args = [])
@@ -43,9 +46,9 @@ class SalsifyWebhook
             $response->getBody()->write("{ 'response':'validation failed'}");
         } else {
             $this->logger->info("salsify-webhook '/slsifywebhook' ok, id = " . $rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0]);
-            $outFile = fopen("../cache/body.json", "w") or die("Unable to open file!");
-            fwrite($outFile, $requestBody);
-            fclose($outFile);
+            //todo test if db save was successful
+            $this->salsifyProductData->saveData($rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0], $requestBody);
+
             $response->getBody()->write("{ 'response':'ok' }");
         }
         return $response;
