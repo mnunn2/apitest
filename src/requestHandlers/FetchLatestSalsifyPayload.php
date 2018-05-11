@@ -6,17 +6,17 @@ use \Psr\Http\Message\ServerRequestInterface as Req;
 use \Psr\Http\Message\ResponseInterface as Resp;
 use Monolog\Logger;
 
-class SalsifyData
+class FetchLatestSalsifyPayload
 {
     private $logger;
     private $salsifyProductData;
     /**
      * SalsifyHeaders constructor.
      * @param Logger $logger
-     * @param SalsifyProductData $salsifyProductData
+     * @param WebhookTable $salsifyProductData
      *
      */
-    public function __construct(Logger $logger, SalsifyProductData $salsifyProductData)
+    public function __construct(Logger $logger, WebhookTable $salsifyProductData)
     {
         $this->logger = $logger;
         $this->salsifyProductData = $salsifyProductData;
@@ -24,11 +24,12 @@ class SalsifyData
 
     public function __invoke(Req $request, Resp $response, $args)
     {
-        $jsonString = $this->salsifyProductData->getData();
-        $newResponse = $response->withHeader('Content-type', 'application/json');
-        $newResponse->getBody()->write($jsonString);
+        $latestPayload = $this->salsifyProductData->fetchLatestPayload();
 
-        return $response;
+        $newResponse = $response->withHeader('Content-type', 'application/json');
+        $newResponse->getBody()->write($latestPayload);
+
+        return $newResponse;
     }
 }
 

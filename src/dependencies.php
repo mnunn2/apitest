@@ -5,9 +5,10 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \Monolog\Processor\UidProcessor;
 use \Apiclient\SalsifyHeaders;
-use \Apiclient\SalsifyData;
+use \Apiclient\FetchLatestSalsifyPayload;
 use \Apiclient\SalsifyWebhook;
-use \Apiclient\SalsifyProductData;
+use \Apiclient\WebhookTable;
+use \Apiclient\EvanceProductTable;
 
 $container = $app->getContainer();
 
@@ -30,10 +31,16 @@ $container['logger'] = function ($c) {
 
 $container['db'] = function ($c) {
     $settings = $c->get('settings')['db'];
-    $pdo = new PDO('mysql:host=' . $settings['host'] . ';dbname=' . $settings['dbname'],
-        $settings['user'], $settings['pass']);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $dsn = "mysql:host=" . $settings["host"] . ";dbname=" . $settings["dbname"];
+
+    $opt = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ];
+
+    $pdo = new PDO($dsn, $settings['user'], $settings['pass'], $opt);
+
     return $pdo;
 };
 
@@ -42,23 +49,29 @@ $container['salsifyHeaders'] = function($c) {
     return new SalsifyHeaders($logger);
 };
 
-$container['salsifyProductData'] = function($c) {
+$container['webhookTable'] = function($c) {
     $logger = $c->get('logger');
     $db = $c->get('db');
-    return new SalsifyProductData($logger, $db);
+    return new WebhookTable($logger, $db);
+};
+
+$container['evanceProductTable'] = function($c) {
+    $logger = $c->get('logger');
+    $db = $c->get('db');
+    return new EvanceProductTable($logger, $db);
 };
 
 // NB the full class name is required because it is being called directly
 // by class name from the route
-$container['Apiclient\SalsifyData'] = function($c) {
+$container['Apiclient\FetchLatestSalsifyPayload'] = function($c) {
     $logger = $c->get('logger');
-    $data = $c->get('salsifyProductData');
-    return new SalsifyData($logger, $data);
+    $data = $c->get('webhookTable');
+    return new FetchLatestSalsifyPayload($logger, $data);
 };
 
 $container['Apiclient\SalsifyWebhook'] = function($c) {
     $logger = $c->get('logger');
     $headers = $c->get('salsifyHeaders');
-    $productData = $c->get('salsifyProductData');
+    $productData = $c->get('webhookTable');
     return new SalsifyWebhook($logger, $headers, $productData);
 };

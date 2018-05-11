@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Mike Nunn
- * Date: 26/04/2018
- * Time: 15:25
- */
 
 return [
     'settings' => [

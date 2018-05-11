@@ -2,12 +2,12 @@
 
 use \Psr\Http\Message\ServerRequestInterface as Req;
 use \Psr\Http\Message\ResponseInterface as Resp;
-use \Apiclient\SalsifyData;
+use \Apiclient\FetchLatestSalsifyPayload;
 use \Apiclient\SalsifyWebhook;
 
 $app->post('/salsifywebhook[/{test}]', SalsifyWebhook::class);
 
-$app->get('/salsifyData', SalsifyData::class);
+$app->get('/fetchLatestSalsifyPayload', FetchLatestSalsifyPayload::class);
 
 $app->post('/dumpData', function (Req $request, Resp $response) {
 

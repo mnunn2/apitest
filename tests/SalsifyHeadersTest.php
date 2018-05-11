@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * Also tests creation of ApiClient with valid credentials.
  *
  */
-final class ProductServiceTest extends TestCase
+final class //todo extends TestCase
 {
     private $client;
     private $token

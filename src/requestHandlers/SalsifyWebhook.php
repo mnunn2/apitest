@@ -10,21 +10,21 @@ class SalsifyWebhook
 {
     private $logger;
     private $salsifyHeaders;
-    private $salsifyProductData;
+    private $webhookTable;
 
     /**
      * SalsifyHeaders constructor.
      * @param Logger $logger
      * @param SalsifyHeaders $salsifyHeaders
-     * @param SalsifyProductData $salsifyProductData
+     * @param WebhookTable $webhookTable
      *
      *
      */
-    public function __construct(Logger $logger, SalsifyHeaders $salsifyHeaders, SalsifyProductData $salsifyProductData)
+    public function __construct(Logger $logger, SalsifyHeaders $salsifyHeaders, WebhookTable $webhookTable)
     {
         $this->logger = $logger;
         $this->salsifyHeaders = $salsifyHeaders;
-        $this->salsifyProductData = $salsifyProductData;
+        $this->webhookTable = $webhookTable;
     }
 
     public function __invoke(Req $request, Resp $response, $args = [])
@@ -47,7 +47,7 @@ class SalsifyWebhook
         } else {
             $this->logger->info("salsify-webhook '/slsifywebhook' ok, id = " . $rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0]);
             //todo test if db save was successful
-            $this->salsifyProductData->saveData($rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0], $requestBody);
+            $this->webhookTable->saveData($rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0], $requestBody);
 
             $response->getBody()->write("{ 'response':'ok' }");
         }
