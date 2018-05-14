@@ -28,10 +28,10 @@ class WebhookTable
         return true;
     }
 
-    public function fetchFirstNRecords($numberOfRecords)
+    public function fetchFirstNRecordsPending($numberOfRecords)
     {
-        $stmt = $this->db->prepare("SELECT * FROM salsifyJSON ORDER BY id LIMIT ?");
-        $stmt->execute([$numberOfRecords]);
+        $stmt = $this->db->prepare("SELECT * FROM salsifyJSON WHERE status = ? ORDER BY id LIMIT ?");
+        $stmt->execute(array("pending", $numberOfRecords));
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return $data;
     }
@@ -43,10 +43,10 @@ class WebhookTable
         return $data;
     }
 
-    public function updateStatus($status)
+    public function updateStatus($id, $status)
     {
-        $stmt = $this->db->query("SELECT payload FROM salsifyJSON ORDER BY id DESC LIMIT 1");
-        $data = $stmt->fetchColumn();
-        return $data;
+        $stmt = $this->db->prepare( "UPDATE salsifyJSON SET status = ? WHERE id = ?");
+        $stmt->execute(array($status, $id));
+        return true;
     }
 }
