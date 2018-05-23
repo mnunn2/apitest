@@ -40,7 +40,7 @@ final class ProductResourceTest extends TestCase
         print_r("\n" . $this->token["access_token"] . "\n");
     }
 
-    public function testGetProduct() {
+    public function testGetProductById() {
         //$id = 3053;
         $id = 11;
         $products = $this->products->get($id);
@@ -66,7 +66,7 @@ final class ProductResourceTest extends TestCase
      *
      * @dataProvider providerTestSearchProdcutsBy
      */
-    public function testSearchProductsByIds($criteria, $criterias, $params) {
+    public function testSearchProductsByCriteria($criteria, $criterias, $params) {
         $response = $this->products->search($params);
         $this->assertInternalType('array', $response);
         $searchCriteria = array_map('trim', explode(",", $params[$criterias]));
@@ -117,6 +117,5 @@ final class ProductResourceTest extends TestCase
             print_r(" \n\n");
         }
 
-        //$this->assertCount(0, $response["product"]);
     }
 }

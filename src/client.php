@@ -8,12 +8,17 @@ $client = new ApiClient();
 $client->loadAuthConfig('../client-credentials-salsify-app.json');
 $token = $client->fetchAccessTokenWithJwt();
 
-$products = new \Evance\Resource\Products($client);
+$rawData = json_decode(file_get_contents(dirname(__FILE__) . '/../cache/beaphar.json'));
+$productData["product"] = $rawData;
+
+$resource = new \Evance\Resource\Products($client);
+
 //var_dump($products->get(3053));
-$params = ["skus" => "EX-PP-001, EX-PP-002, 683"];
+$params = ["skus" => "EX-PP-001"];
 try {
-    //$product = $products->get(1696);
-    $response = $products->search($params);
+    //$response = $resource->search($params);
+    $response = $resource->add($productData);
+    print_r($response);
 } catch (Exception $e) {
     echo $e->getMessage();
 }
