@@ -16,11 +16,13 @@ final class ProductResourceTest extends TestCase
     private $client;
     private $token;
     private $products;
+    private $beapharData;
 
     public function setUp() {
         $this->client = new ApiClient();
         $this->products = new Products($this->client);
         $this->client->loadAuthConfig('../client-credentials-salsify-app.json');
+        $this->beapharData = json_decode(file_get_contents("beapharProduct.json"), true);
         $this->token = $this->client->fetchAccessTokenWithJwt();
     }
 
@@ -117,5 +119,11 @@ final class ProductResourceTest extends TestCase
             print_r(" \n\n");
         }
 
+    }
+
+    public function testInsertProductWhereProductDoesNotExist() {
+        //print_r($this->beapharData);
+        $response = $this->products->add($this->beapharData);
+        var_dump($response);
     }
 }
