@@ -121,9 +121,60 @@ final class ProductResourceTest extends TestCase
 
     }
 
-    public function testInsertProductWhereProductDoesNotExist() {
-        //print_r($this->beapharData);
-        $response = $this->products->add($this->beapharData);
-        var_dump($response);
+    public function testInsertAndUpdateProduct() {
+        // todo mike: check if "Item SKU" or "salsify:id" should be used for SKU
+
+        // check the product doesn't already exist
+        $sku = $this->beapharData["product"]["Item SKU"];
+        $params = ["skus" => $sku];
+        $result = $this->products->search($params);
+        $this->assertArrayHasKey("product", $result);
+        $this->assertTrue(empty($result["product"]), "The product sku exists in the db");
+
+        // insert the product into db
+        $createData = $this->products->add($this->beapharData);
+        $this->assertArrayHasKey("product", $createData);
+        $createId = $createData["product"]["id"];
+        $this->assertInternalType("int", $createId);
+        print_r("product created with id of " . $createId . "\n");
+
+        // ensure the product now exists in the DB
+        $findData = $this->products->get($createId);
+        $findId = $findData["product"]["id"];
+        $this->assertSame($createId, $findId);
+        print_r("product " . $createId . " exists in db" . "\n");
+
+        // update product
+        $this->beapharData["product"]["Item Description"] = "new description";
+        // assume we have the productId from a sku search so we know the product exists to be updated
+        $this->products->update($createId, $this->beapharData);
+        $updatedData = $this->products->get($createId);
+        // N.B the salsify "Item Description is mapped to Evance product "title" in ProductApiMap
+        $this->assertTrue($updatedData["product"]["title"] === "new description", "update invalid");
+        print_r("product " . $createId . " updated" . "\n");
+
+        // delete the product
+        $this->products->delete($createId);
+
+        // make sure it's deleted
+        print_r("check " . $createId . " deleted" . "\n");
+        $this->expectException(\GuzzleHttp\Exception\ClientException::class);
+        $this->products->get($createId);
+    }
+
+    public function testExceptionWhenInsertedProductExists() {
+        $productData = $this->products->add($this->beapharData);
+        $id = $productData["product"]["id"];
+        // try and re add the same product
+        $this->expectException(\GuzzleHttp\Exception\ClientException::class);
+        try {
+            $this->products->add($this->beapharData);
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $this->assertContains('SKU (Stock Keeping Unit) is not unique', $e->getMessage());
+            //$message = json_decode($e->getMessage());
+            //print_r($message->product->sku[0]);
+            $this->products->delete($id);
+            throw $e;
+        }
     }
 }
