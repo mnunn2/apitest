@@ -21,29 +21,29 @@ class EvanceProductTable
         $this->db = $db;
     }
 
-    public function saveData($productId, $productJson)
+    public function saveData($sku, $productJson)
     {
-        if ($this->fetchByProductId($productId)) {
-            $stmt = $this->db->prepare( "UPDATE evanceProduct SET status = ?, productJSON = ? WHERE product_id = ?");
-            $stmt->execute(array("pending", $productJson, $productId));
+        if ($this->fetchBySku($sku)) {
+            $stmt = $this->db->prepare( "UPDATE evanceProduct SET status = ?, productJSON = ? WHERE sku = ?");
+            $stmt->execute(array("pending", $productJson, $sku));
         } else {
-            $stmt = $this->db->prepare("INSERT INTO evanceProduct (status, product_id, productJSON) VALUES(?, ?, ?)");
-            $stmt->execute(array("pending", $productId, $productJson));
+            $stmt = $this->db->prepare("INSERT INTO evanceProduct (status, sku, productJSON) VALUES(?, ?, ?)");
+            $stmt->execute(array("pending", $sku, $productJson));
         }
         return true;
     }
-
-    public function fetchFirstNRecords($numberOfRecords)
+    // todo mike: refactor common code to parent class
+    public function fetchFirstNRecordsPending($numberOfRecords)
     {
-        $stmt = $this->db->prepare("SELECT * FROM evanceProduct ORDER BY id LIMIT ?");
-        $stmt->execute([$numberOfRecords]);
+        $stmt = $this->db->prepare("SELECT * FROM evanceProduct WHERE status = ? ORDER BY id LIMIT ?");
+        $stmt->execute(["pending", $numberOfRecords]);
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         return $data;
     }
 
-    public function fetchByProductId($productId)
+    public function fetchBySku($productId)
     {
-        $stmt = $this->db->prepare("SELECT id FROM evanceProduct WHERE product_id = ?");
+        $stmt = $this->db->prepare("SELECT id FROM evanceProduct WHERE sku = ?");
         $stmt->execute([$productId]);
         $id = $stmt->fetchColumn();
         if (!is_int($id)) {
@@ -51,5 +51,12 @@ class EvanceProductTable
         }
         return true;
 
+    }
+
+    public function updateStatus($id, $status)
+    {
+        $stmt = $this->db->prepare( "UPDATE evanceProduct SET status = ? WHERE id = ?");
+        $stmt->execute(array($status, $id));
+        return true;
     }
 }

@@ -3,13 +3,17 @@
 require '../vendor/autoload.php';
 use \Slim\App;
 use \Apiclient\EvanceProductMapper;
+use Evance\ApiClient;
+use Evance\Resource\Products;
 
 // Instantiate new Slim app to use DI and settings for DB connection
 $settings = require '../src/settings.php';
 $app = new App($settings);
 require '../src/dependencies.php';
 
-define("RECORD_LIMIT", 4);
+define("SALSIFY_RECORD_LIMIT", 4);
+define("EVANCE_RECORD_LIMIT", 25);
+define("CREDENTIALS", '../client-credentials-salsify-app.json');
 
 /**
  * Initialise table classes from DI container
@@ -19,18 +23,49 @@ define("RECORD_LIMIT", 4);
 $webhookTable = $container['webhookTable'];
 $evanceProductTable = $container['evanceProductTable'];
 
-$records = $webhookTable->fetchFirstNRecordsPending(RECORD_LIMIT);
 
-foreach ($records as $record) {
-    $salsifyRecord = json_decode($record['payload'], true);
-    $products = $salsifyRecord["products"] ;
+// process pending items in salsifyJSON table
+$salsifyRecords = $webhookTable->fetchFirstNRecordsPending(SALSIFY_RECORD_LIMIT);
+foreach ($salsifyRecords as $record) {
+    $rawData = json_decode($record['payload'], true);
+    $products = $rawData["products"] ;
 
     foreach ($products as $product) {
-        $evanceProduct = (new EvanceProductMapper($product))->getProduct();
-        $evanceProductTable->saveData($evanceProduct["evance_product_id"], json_encode($evanceProduct));
+        $evanceProductData = (new EvanceProductMapper($product))->getProduct();
+        $evanceProduct["product"] = $evanceProductData;
+        $evanceProductTable->saveData($evanceProduct["product"]["sku"], json_encode($evanceProduct));
     }
     echo "processed " . $record["id"] . " " . $record["request_id"];
     echo " with " . count($products) . " products\n";
     $webhookTable->updateStatus($record["id"], "processed");
 }
+
+// setup apiclient
+$client = new ApiClient();
+$products = new Products($client);
+$client->loadAuthConfig(CREDENTIALS);
+$token = $client->fetchAccessTokenWithJwt();
+
+// process pending items in evanceProduct table
+$evanceRecords = $evanceProductTable->fetchFirstNRecordsPending(EVANCE_RECORD_LIMIT);
+foreach ($evanceRecords as $record) {
+    $productData = json_decode($record["productJSON"], true);
+    $sku = $productData["product"]["sku"];
+    $params = ["skus" => $sku];
+    $result = $products->search($params);
+    if (empty($result["product"])) {
+        $createData = $products->add($productData);
+        $createId = $createData["product"]["id"];
+        print_r("product ID inserted " . $createId . " ");
+    } else {
+        $foundId = $result["product"][0]["id"];
+        $products->update($foundId, $productData);
+        print_r("product ID updated " . $foundId . " ");
+    }
+    $evanceProductTable->updateStatus($record["id"], "processed");
+
+    print_r($record["sku"] . " $sku\n");
+    //var_dump($product["Item SKU"]);
+}
+
 

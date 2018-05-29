@@ -1,0 +1,29 @@
+{
+  "product":
+  {
+    "sku": "10001",
+    "title": "{}PORK EAR",
+    "description": "This is a description",
+    "barcode": "8711231100016",
+    "url": "http://wibble.wobble.com",
+    "range": "pet stuff",
+    "model": "A220",
+    "partNumber": "C020",
+    "discontinued": "N",
+    "discontinuedReason": "",
+    "published": "",
+    "expires": "",
+    "minLeadTime": "3",
+    "maxLeadTime": "5",
+    "minOrderQuantity": "0",
+    "maxOrderQuantity": "0",
+    "metaTitle": "",
+    "metaDescription": "g",
+    "metaKeywords": "",
+    "packagedWeight": "1",
+    "packagedWidth": "2",
+    "packagedHeight": "3",
+    "packagedDepth": "4"
+  }
+}
+

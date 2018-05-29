@@ -8,8 +8,14 @@ class EvanceProductMapper
 
     private $product;
     private $map = array(
-        'salsify:id' => 'evance_product_id',
-        'salsify:parent_id' => 'evance_Parent_id',
+        // todo mike: check if "Item SKU" or "salsify:id" should be used for SKU
+        'Item SKU' => 'sku',
+        'SKU Barcode' => 'barcode',
+        'Item Description' => 'title',
+        'en-GB_ShortDescription' => 'description',
+        'SKU Width' => 'packagedWidth',
+        'SKU Height' => 'packagedHeight',
+        'SKU Length' => 'packagedDepth',
     );
 
     public function __construct(array $salsifyProduct)
