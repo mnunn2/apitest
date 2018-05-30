@@ -122,7 +122,7 @@ final class ProductResourceTest extends TestCase
     }
 
     public function testInsertAndUpdateProduct() {
-        // todo mike: check if "Item SKU" or "salsify:id" should be used for SKU
+        // todo mike: test for sending a non product object
 
         // check the product doesn't already exist
         $sku = $this->genericData["product"]["sku"];

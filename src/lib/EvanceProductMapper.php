@@ -9,6 +9,7 @@ class EvanceProductMapper
     private $product;
     private $map = array(
         // todo mike: check if "Item SKU" or "salsify:id" should be used for SKU
+        // salsify name => common name (as opposed to data name)
         'Item SKU' => 'sku',
         'SKU Barcode' => 'barcode',
         'Item Description' => 'title',

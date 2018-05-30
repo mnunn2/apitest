@@ -67,5 +67,3 @@ foreach ($evanceRecords as $record) {
     print_r($record["sku"] . " $sku\n");
     //var_dump($product["Item SKU"]);
 }
-
-
