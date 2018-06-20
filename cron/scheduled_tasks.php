@@ -11,9 +11,10 @@ $settings = require '../src/settings.php';
 $app = new App($settings);
 require '../src/dependencies.php';
 
-define("SALSIFY_RECORD_LIMIT", 4);
-define("EVANCE_RECORD_LIMIT", 25);
-define("CREDENTIALS", '../client-credentials-salsify-app.json');
+// define("SALSIFY_RECORD_LIMIT", 4);
+const SALSIFY_RECORD_LIMIT = 4;
+const EVANCE_RECORD_LIMIT = 25;
+const CREDENTIALS = '../client-credentials-salsify-app.json';
 
 /**
  * Initialise table classes from DI container

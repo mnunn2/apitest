@@ -32,7 +32,9 @@ class SalsifyWebhook
         //todo: add log prefix
         if (array_key_exists('test', $args)) {
             // for use with the test data set
-            $this->salsifyHeaders->setWebhookURL('http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData');
+            $this->salsifyHeaders->setWebhookURL(
+                'http://client-client-test.a3c1.starter-us-west-1.openshiftapps.com/dumpData'
+            );
         } else {
             $this->salsifyHeaders->setWebhookURL((string)$request->getUri());
         }
@@ -45,7 +47,9 @@ class SalsifyWebhook
             $this->logger->error("salsify-webhook '/slsifywebhook' validation error");
             $response->getBody()->write("{ 'response':'validation failed'}");
         } else {
-            $this->logger->info("salsify-webhook '/slsifywebhook' ok, id = " . $rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0]);
+            $this->logger->info("salsify-webhook '/slsifywebhook' ok, id = " .
+                $rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0]);
+
             //todo test if db save was successful
             $this->webhookTable->saveData($rawHeaders["HTTP_X_SALSIFY_REQUEST_ID"][0], $requestBody);
 
@@ -54,4 +58,3 @@ class SalsifyWebhook
         return $response;
     }
 }
-

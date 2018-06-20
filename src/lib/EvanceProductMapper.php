@@ -2,7 +2,6 @@
 
 namespace Apiclient;
 
-
 class EvanceProductMapper
 {
 
@@ -21,9 +20,8 @@ class EvanceProductMapper
 
     public function __construct(array $salsifyProduct)
     {
-       $this->product = $salsifyProduct;
-       $this->mapProduct();
-
+        $this->product = $salsifyProduct;
+        $this->mapProduct();
     }
 
     private function mapProduct()
@@ -45,5 +43,4 @@ class EvanceProductMapper
     {
         return $this->product;
     }
-
 }

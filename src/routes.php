@@ -31,4 +31,3 @@ $app->get('/info', function (Req $request, Resp $response) {
 
     return $response;
 });
-

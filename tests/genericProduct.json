@@ -1,8 +1,8 @@
 {
   "product":
   {
-    "sku": "10001",
-    "title": "{}PORK EAR",
+    "sku": "AZEXIS-TEST-10001",
+    "title": "Test Product",
     "description": "This is a description",
     "barcode": "8711231100016",
     "url": "http://wibble.wobble.com",

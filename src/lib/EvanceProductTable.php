@@ -24,7 +24,7 @@ class EvanceProductTable
     public function saveData($sku, $productJson)
     {
         if ($this->fetchBySku($sku)) {
-            $stmt = $this->db->prepare( "UPDATE evanceProduct SET status = ?, productJSON = ? WHERE sku = ?");
+            $stmt = $this->db->prepare("UPDATE evanceProduct SET status = ?, productJSON = ? WHERE sku = ?");
             $stmt->execute(array("pending", $productJson, $sku));
         } else {
             $stmt = $this->db->prepare("INSERT INTO evanceProduct (status, sku, productJSON) VALUES(?, ?, ?)");
@@ -50,12 +50,11 @@ class EvanceProductTable
             return false;
         }
         return true;
-
     }
 
     public function updateStatus($id, $status)
     {
-        $stmt = $this->db->prepare( "UPDATE evanceProduct SET status = ? WHERE id = ?");
+        $stmt = $this->db->prepare("UPDATE evanceProduct SET status = ? WHERE id = ?");
         $stmt->execute(array($status, $id));
         return true;
     }

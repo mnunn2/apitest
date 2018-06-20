@@ -1,8 +1,8 @@
 <?php
 
+namespace Evance\Resource;
 
 use Evance\ApiClient;
-use Evance\Resource\Products;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -16,19 +16,15 @@ final class ProductResourceTest extends TestCase
     private $client;
     private $token;
     private $products;
-    private $genericData;
+    private $productData;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->client = new ApiClient();
         $this->products = new Products($this->client);
         $this->client->loadAuthConfig('../client-credentials-salsify-app.json');
-        $this->genericData = json_decode(file_get_contents("genericProduct.json"), true);
+        $this->productData = json_decode(file_get_contents("genericProduct.json"), true);
         $this->token = $this->client->fetchAccessTokenWithJwt();
-    }
-
-    public function testClientCanBeCreated()
-    {
-        $this->assertInstanceOf(ApiClient::class, $this->client);
     }
 
     public function testProductsCanBeCreated()
@@ -36,22 +32,25 @@ final class ProductResourceTest extends TestCase
         $this->assertInstanceOf(Products::class, $this->products);
     }
 
-    public function testReturnedToken() {
+    public function testReturnedToken()
+    {
         $this->assertInternalType('string', $this->token["access_token"]);
         $this->assertEquals('Bearer', $this->token["token_type"]);
         print_r("\n" . $this->token["access_token"] . "\n");
     }
 
-    public function testGetProductById() {
+    public function testGetProductById()
+    {
         //$id = 3053;
         $id = 11;
         $products = $this->products->get($id);
         $this->assertInternalType('array', $products);
         $this->assertEquals($id, $products["product"]["id"]);
-        print_r( $products["product"]["id"] . "\n");
+        print_r($products["product"]["id"] . "\n");
     }
 
-    public function providerTestSearchProdcutsBy() {
+    public function providerTestSearchProdcutsBy()
+    {
         return array(
             array('id', 'ids', ["ids" => "1695, 3053, 3033", "orderBy" => "created:desc"]),
             array('sku', 'skus', ["skus" => "EX-PP-001, EX-PP-002, TENQ01S", "orderBy" => "created:desc"]),
@@ -68,7 +67,8 @@ final class ProductResourceTest extends TestCase
      *
      * @dataProvider providerTestSearchProdcutsBy
      */
-    public function testSearchProductsByCriteria($criteria, $criterias, $params) {
+    public function testSearchProductsByCriteria($criteria, $criterias, $params)
+    {
         $response = $this->products->search($params);
         $this->assertInternalType('array', $response);
         $searchCriteria = array_map('trim', explode(",", $params[$criterias]));
@@ -76,7 +76,7 @@ final class ProductResourceTest extends TestCase
         $time = strtotime("now");
         foreach ($response["product"] as $product) {
             array_push($responseCriteria, $product[$criteria]);
-            print_r( $product[$criteria] . " " . $product["created"] . "\n");
+            print_r($product[$criteria] . " " . $product["created"] . "\n");
             $newTime = strtotime($product["created"]);
             $this->assertGreaterThan($newTime, $time);
             $time = $newTime;
@@ -87,16 +87,8 @@ final class ProductResourceTest extends TestCase
         //var_dump($response);
     }
 
-    public function testSearchByCriteriaNotExisting() {
-        $params1 = ["ids" => "1111, 2222, 3333"];
-        $params2 = ["skus" => "ABC, DEF, GHI"];
-        $params3 = ["partNumbers" => "111, 222, 333"];
-        $response = $this->products->search($params3);
-        $this->assertInternalType('array', $response);
-        $this->assertCount(0, $response["product"]);
-    }
-
-    public function testSearchPagination() {
+    public function testSearchPagination()
+    {
         $x = 2;
         $params = [];
         $params += ["ids" => "1695, 3053, 3033"];
@@ -118,21 +110,12 @@ final class ProductResourceTest extends TestCase
             }
             print_r(" \n\n");
         }
-
     }
 
-    public function testInsertAndUpdateProduct() {
-        // todo mike: test for sending a non product object
-
-        // check the product doesn't already exist
-        $sku = $this->genericData["product"]["sku"];
-        $params = ["skus" => $sku];
-        $result = $this->products->search($params);
-        $this->assertArrayHasKey("product", $result);
-        $this->assertTrue(empty($result["product"]), "The product sku exists in the db");
-
+    public function testInsertAndUpdateProduct()
+    {
         // insert the product into db
-        $createData = $this->products->add($this->genericData);
+        $createData = $this->products->add($this->productData);
         $this->assertArrayHasKey("product", $createData);
         $createId = $createData["product"]["id"];
         $this->assertInternalType("int", $createId);
@@ -145,9 +128,9 @@ final class ProductResourceTest extends TestCase
         print_r("product " . $createId . " exists in db" . "\n");
 
         // update product
-        $this->genericData["product"]["description"] = "new description";
+        $this->productData["product"]["description"] = "new description";
         // assume we have the productId from a sku search so we know the product exists to be updated
-        $this->products->update($createId, $this->genericData);
+        $this->products->update($createId, $this->productData);
         $updatedData = $this->products->get($createId);
         // N.B the salsify "Item Description is mapped to Evance product "title" in ProductApiMap
         $this->assertTrue($updatedData["product"]["description"] === "new description", "update invalid");
@@ -160,21 +143,5 @@ final class ProductResourceTest extends TestCase
         print_r("check " . $createId . " deleted" . "\n");
         $this->expectException(\GuzzleHttp\Exception\ClientException::class);
         $this->products->get($createId);
-    }
-
-    public function testExceptionWhenInsertedProductExists() {
-        $productData = $this->products->add($this->genericData);
-        $id = $productData["product"]["id"];
-        // try and re add the same product
-        $this->expectException(\GuzzleHttp\Exception\ClientException::class);
-        try {
-            $this->products->add($this->genericData);
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $this->assertContains('SKU (Stock Keeping Unit) is not unique', $e->getMessage());
-            //$message = json_decode($e->getMessage());
-            //print_r($message->product->sku[0]);
-            $this->products->delete($id);
-            throw $e;
-        }
     }
 }
