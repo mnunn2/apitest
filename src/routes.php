@@ -24,10 +24,3 @@ $app->post('/dumpData', function (Req $request, Resp $response) {
 
     return $response;
 });
-
-$app->get('/info', function (Req $request, Resp $response) {
-
-    $response->getBody()->write(phpinfo());
-
-    return $response;
-});

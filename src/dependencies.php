@@ -40,22 +40,27 @@ $container['db'] = function ($c) {
     ];
 
     $pdo = new PDO($dsn, $settings['user'], $settings['pass'], $opt);
+    $pdo->exec("SET NAMES 'utf8'");
+    $pdo->exec("SET CHARACTER SET 'utf8'");
+    $pdo->exec("SET character_set_connection = utf8");
+    $pdo->exec("SET character_set_database = utf8");
+
 
     return $pdo;
 };
 
-$container['salsifyHeaders'] = function($c) {
+$container['salsifyHeaders'] = function ($c) {
     $logger = $c->get('logger');
     return new SalsifyHeaders($logger);
 };
 
-$container['webhookTable'] = function($c) {
+$container['webhookTable'] = function ($c) {
     $logger = $c->get('logger');
     $db = $c->get('db');
     return new WebhookTable($logger, $db);
 };
 
-$container['evanceProductTable'] = function($c) {
+$container['evanceProductTable'] = function ($c) {
     $logger = $c->get('logger');
     $db = $c->get('db');
     return new EvanceProductTable($logger, $db);
@@ -63,13 +68,13 @@ $container['evanceProductTable'] = function($c) {
 
 // NB the full class name is required because it is being called directly
 // by class name from the route
-$container['Apiclient\FetchLatestSalsifyPayload'] = function($c) {
+$container['Apiclient\FetchLatestSalsifyPayload'] = function ($c) {
     $logger = $c->get('logger');
     $data = $c->get('webhookTable');
     return new FetchLatestSalsifyPayload($logger, $data);
 };
 
-$container['Apiclient\SalsifyWebhook'] = function($c) {
+$container['Apiclient\SalsifyWebhook'] = function ($c) {
     $logger = $c->get('logger');
     $headers = $c->get('salsifyHeaders');
     $productData = $c->get('webhookTable');
