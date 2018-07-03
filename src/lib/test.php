@@ -1,27 +1,20 @@
 <?php
 
-
-$map = array(
-    'salsify:id' => 'evance_Product_id',
-    'salsify:parent_id' => 'evance_Parent_id',
-);
-
-$product = array(
-    'salsify:id' => '100010',
-    'salsify:parent_id' => 'parent-001',
-    'salsify:stuff' => 'this is a description',
-    'salsify:morestuff' => 'test-001',
-);
-
-foreach ($product as $oldName => $value) {
-    foreach ($map as $mapName => $newName) {
-        if ($oldName === $mapName) {
-            $product[$newName] = $product[$oldName];
-            unset($product[$oldName]);
+$json = json_decode(file_get_contents('test.json'));
+$products = $json->products;
+//$locales = new \Ds\Set();
+// $locales = ['en-GB', 'fr-FR', 'de-DE'];
+$translations = [];
+//$translations[$locale] = [];
+foreach ($products[0] as $key => $val) {
+    if (preg_match("/^([a-z][a-z]-[A-Z][A-Z])_(.+)/", $key, $match)) {
+        $payloadLocales[$match[1]] = null;
+        if (array_key_exists($match[1], $translations)) {
+            $translations[$match[1]][$match[2]] = $val;
+        } else {
+            $translations[$match[1]] = [$match[2] => $val];
         }
     }
 }
 
-print_r($product);
-
-
+print_r($translations);

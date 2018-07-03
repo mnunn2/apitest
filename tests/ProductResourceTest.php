@@ -132,7 +132,7 @@ final class ProductResourceTest extends TestCase
         // assume we have the productId from a sku search so we know the product exists to be updated
         $this->products->update($createId, $this->productData);
         $updatedData = $this->products->get($createId);
-        // N.B the salsify "Item Description is mapped to Evance product "title" in ProductApiMap
+        // N.B the salsify "Item Description is mapped to Evance product "title" in ProductMap
         $this->assertTrue($updatedData["product"]["description"] === "new description", "update invalid");
         print_r("product " . $createId . " updated" . "\n");
 

@@ -21,14 +21,20 @@ class EvanceProductTable
         $this->db = $db;
     }
 
-    public function saveData($sku, $productJson)
+    public function saveData($sku, $productJson, $translationJson = null, $mediaJson = null)
     {
         if ($this->fetchBySku($sku)) {
-            $stmt = $this->db->prepare("UPDATE evanceProduct SET status = ?, productJSON = ? WHERE sku = ?");
-            $stmt->execute(array("pending", $productJson, $sku));
+            $stmt = $this->db->prepare("UPDATE evanceProduct SET status = ?,
+                                                                productJSON = ?,
+                                                                translationJSON = ?,
+                                                                mediaJSON = ? WHERE sku = ?");
+
+            $stmt->execute(array("pending", $productJson, $translationJson, $mediaJson, $sku));
         } else {
-            $stmt = $this->db->prepare("INSERT INTO evanceProduct (status, sku, productJSON) VALUES(?, ?, ?)");
-            $stmt->execute(array("pending", $sku, $productJson));
+            $stmt = $this->db->prepare("INSERT INTO evanceProduct (status, sku, productJSON,
+                                                                  translationJSON, mediaJSON) VALUES(?, ?, ?, ?, ?)");
+
+            $stmt->execute(array("pending", $sku, $productJson, $translationJson, $mediaJson));
         }
         return true;
     }
