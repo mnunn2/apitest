@@ -4,18 +4,19 @@ require '../vendor/autoload.php';
 use \Slim\App;
 use \Apiclient\ProductMap;
 use \Apiclient\MediaMap;
+use \Apiclient\TranslationMap;
 use Evance\ApiClient;
 use Evance\Resource\Products;
 use Evance\Resource\ProductMedia;
+use Evance\Resource\ProductTranslations;
 
 // Instantiate new Slim app to use DI and settings for DB connection
 $settings = require '../src/settings.php';
 $app = new App($settings);
 require '../src/dependencies.php';
 
-// define("SALSIFY_RECORD_LIMIT", 4);
-const SALSIFY_RECORD_LIMIT = 5;
-const EVANCE_RECORD_LIMIT = 100;
+const SALSIFY_RECORD_LIMIT = 10;
+const EVANCE_RECORD_LIMIT = 25;
 const CREDENTIALS = '../client-credentials-salsify-app.json';
 
 /**
@@ -51,7 +52,7 @@ foreach ($salsifyRecords as $record) {
                 $media += [$match[1] => $val];
             }
         }
-        print_r($media);
+        //print_r($media);
 
         // save the various json data to the db
         $translationJson = (!empty($translations)) ? json_encode($translations) : null;
@@ -63,11 +64,10 @@ foreach ($salsifyRecords as $record) {
             $mediaJson
         );
     }
-    echo "processed " . $record["id"] . " " . $record["request_id"];
-    echo " with " . count($productApi) . " products\n";
+    //echo "processed " . $record["id"] . " " . $record["request_id"];
+    //echo " with " . count($productApi) . " products\n";
     $webhookTable->updateStatus($record["id"], "processed");
 }
-//exit;
 
 // setup apiclient
 $client = new ApiClient();
@@ -93,18 +93,28 @@ foreach ($evanceRecords as $record) {
     try {
         $productResult = $productApi->search($params);
     } catch (GuzzleHttp\Exception\ClientException $e) {
-        echo "Product not found\n";// . $e->getMessage();
+        //echo "Product not found\n";// . $e->getMessage();
     }
+
     // insert or update product
-    if (empty($productResult["product"])) {
-        $createData = $productApi->add($productData);
-        $productId = $createData["product"]["id"];
-        print_r("product ID inserted " . $productId . " ");
+    if (empty($productResult["products"])) {
+        try {
+            $createData = $productApi->add($productData);
+            $productId = $createData["product"]["id"];
+        } catch (GuzzleHttp\Exception\ClientException $e) {
+            print_r("sku $sku insert failed $e\n");
+            continue;
+        }
     } else {
-        $productId = $productResult["product"][0]["id"];
-        $productApi->update($productId, $productData);
-        print_r("product ID updated " . $productId . " ");
+        $productId = $productResult["products"][0]["id"];
+        try {
+            $productApi->update($productId, $productData);
+        } catch (GuzzleHttp\Exception\ClientException $e) {
+            print_r("psku $sku update failed\n");
+            continue;
+        }
     }
+
 
     // create media from db and map properties
     $mediaData = new stdClass();
@@ -120,14 +130,96 @@ foreach ($evanceRecords as $record) {
         try {
             $mediaResult = $mediaApi->add($productId, $mediaData);
         } catch (GuzzleHttp\Exception\ClientException $e) {
-            echo "media already exists\n";// . $e->getMessage();
+            $e->getMessage();
         }
     }
 
+    // create translations from db and map properties
+    $translations = json_decode($record["translationJSON"], true);
+    if ($translations) {
+        $translationsApi = new ProductTranslations($client);
+        $validLocales = fetchValidLocales($productId, $translationsApi);
 
+        foreach ($translations as $locale => $translationPayload) {
+            $locale = mb_strtolower($locale);
+            $translationData = new \stdClass();
+            if (array_key_exists($locale, $validLocales)) {
+                $translationMapper = new TranslationMap($translationData, $translationPayload);
+                $translationMapper->assignLeft(false);
+                if (!empty((array) $translationData)) {
+                    $translationData = ['translation' => (array)$translationData];
+                    $translationData['translation']['language'] = $validLocales[$locale]['language'];
+                    $translationData['translation']['country'] = $validLocales[$locale]['country'];
+                    //print_r($translationData);
+
+                    // insert or update translations
+                    if ($validLocales[$locale]['id']) {
+                        //update with translation is
+                        try {
+                            $translationsApi->update($productId, $validLocales[$locale]['id'], $translationData);
+                            //echo "\ntranslation updated \n";
+                        } catch (\GuzzleHttp\Exception\ClientException $e) {
+                            //echo $e->getMessage();
+                        }
+                    } else {
+                        // insert translation
+                        try {
+                            $translationsApi->add($productId, $translationData);
+                            //echo "\n translation inserted \n";
+                        } catch (\GuzzleHttp\Exception\ClientException $e) {
+                            //echo $e->getMessage();
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     $evanceProductTable->updateStatus($record["id"], "processed");
 
-    print_r($record["sku"] . " $sku\n");
-    //var_dump($product["Item SKU"]);
+    print_r("sku $sku processed\n");
+}
+
+/**
+ * Returns an array of valid locales with a translation id
+ * if it exists for a given prodcutId
+ * @param $translationsApi
+ * @return array
+ */
+function fetchValidLocales($prodcutId, $translationsApi)
+{
+    // get list of valid locales
+    $localesData = null;
+    $validLocales = [];
+    try {
+        $localesData = $translationsApi->getLocales($prodcutId);
+    } catch (\GuzzleHttp\Exception\ClientException $e) {
+        echo "translation already exists\n";// . $e->getMessage();
+    }
+    if ($localesData) {
+        // $localeData['id'] refers to the local eg en-GB
+        foreach ($localesData['locales'] as $localeData) {
+            $validLocales[$localeData['id']] = ['id' => null];
+            $validLocales[$localeData['id']] += ['language' => $localeData['language']];
+            $validLocales[$localeData['id']] += ['country' => $localeData['country']];
+        }
+    }
+
+    // check if translations exist
+    $xlations = null;
+    $translationId = null;
+    try {
+        $xlations = $translationsApi->get($prodcutId);
+    } catch (\GuzzleHttp\Exception\ClientException $e) {
+        //echo $e->getMessage();
+    }
+    if ($xlations) {
+        foreach ($xlations['translations'] as $xlation) {
+            $xlationLocale = $xlation['language'] . "-" . mb_strtolower($xlation['country']);
+            if (array_key_exists($xlationLocale, $validLocales)) {
+                $validLocales[$xlationLocale]['id'] = $xlation['id'];
+            }
+        }
+    }
+    return $validLocales;
 }

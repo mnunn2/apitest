@@ -74,7 +74,7 @@ final class ProductResourceTest extends TestCase
         $searchCriteria = array_map('trim', explode(",", $params[$criterias]));
         $responseCriteria = [];
         $time = strtotime("now");
-        foreach ($response["product"] as $product) {
+        foreach ($response["products"] as $product) {
             array_push($responseCriteria, $product[$criteria]);
             print_r($product[$criteria] . " " . $product["created"] . "\n");
             $newTime = strtotime($product["created"]);
@@ -82,7 +82,7 @@ final class ProductResourceTest extends TestCase
             $time = $newTime;
         }
         // requires valid products with productTypeId of 1 or 3 to pass matching test data above
-        $this->assertCount(count($searchCriteria), $response["product"]);
+        $this->assertCount(count($searchCriteria), $response["products"]);
         $this->assertTrue(sort($searchCriteria) == sort($responseCriteria));
         //var_dump($response);
     }
@@ -105,7 +105,7 @@ final class ProductResourceTest extends TestCase
             print_r("is last page " . $response["isLastPage"] . "\n");
             print_r("previous page " . $response["previousPage"] . "\n");
             print_r("products on this page ");
-            foreach ($response["product"] as $product) {
+            foreach ($response["products"] as $product) {
                 print_r($product["id"] . " ");
             }
             print_r(" \n\n");

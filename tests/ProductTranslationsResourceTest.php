@@ -56,8 +56,8 @@ final class ProductTranslationsResourceTest extends TestCase
         //** test add translations */
         // todo mike; check why product id is returned as int and translations id as string
         $response = $translations->add($this->productId, $translationsData);
-        $this->assertArrayHasKey("translations", $response);
-        $translationsId = $response["translations"]["id"];
+        $this->assertArrayHasKey("translation", $response);
+        $translationsId = $response["translation"]["id"];
         $this->assertRegExp("/^[0-9]+$/", $translationsId);
         $response = null;
 
@@ -70,15 +70,15 @@ final class ProductTranslationsResourceTest extends TestCase
 
         //** test update translations */
         $response = $translations->update($this->productId, $translationsId, $translationsData);
-        $this->assertArrayHasKey("translations", $response);
-        $translationsId = $response["translations"]["id"];
+        $this->assertArrayHasKey("translation", $response);
+        $translationsId = $response["translation"]["id"];
         $this->assertRegExp("/^[0-9]+$/", $translationsId);
         $response = null;
 
         //** test get translations by translationsId */
         $response = $translations->getById($this->productId, $translationsId);
-        $this->assertArrayHasKey("translations", $response);
-        $translationsId = $response["translations"]["id"];
+        $this->assertArrayHasKey("translation", $response);
+        $translationsId = $response["translation"]["id"];
         $this->assertRegExp("/^[0-9]+$/", $translationsId);
         $response = null;
 
